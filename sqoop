@@ -1,0 +1,441 @@
+sqoop list-databases \
+  --connect jdbc:mysql://ms.itversity.com:3306 \
+  --username retail_user \
+  --password itversity
+
+
+sqoop list-tables \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity
+
+
+
+sqoop eval \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --query "select * from orders limit 10"
+
+
+sqoop eval \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --query "insert into orders values (100000, '2017-10-31 00:00:00.0', 100000, 'dummy')"
+
+sqoop eval \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+  --username retail_user \
+  --password itversity \
+  --query "create table levin (i int)"
+
+sqoop eval \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+  --username retail_user \
+  --password itversity \
+  --query "insert into levin values(1)"
+
+
+sqoop eval \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+  --username retail_user \
+  --password itversity \
+  --query "select * from levin"
+
+
+
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --target-dir /user/levinkoshy/sqoop_import/retail_db/order_items
+
+
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --warehouse-dir /user/levinkoshy/sqoop_import/retail_db
+
+
+
+//setting number of mappers
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --warehouse-dir /user/levinkoshy/sqoop_import/retail_db \
+  --num-mappers 1
+
+//to delete target directory if it already exists
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --warehouse-dir /user/levinkoshy/sqoop_import/retail_db \
+  --num-mappers 1 \
+  --delete-target-dir
+
+// to append to the existing data, use -- append instead 
+
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --warehouse-dir /user/levinkoshy/sqoop_import/retail_db \
+  --num-mappers 1 \
+  --append
+
+//if primary key is not present, use --split by
+//the column should be indexed
+//values in the column should be sparse(as many records as possible)
+//best to have sequence generated
+//shouldn't have null values- null values will be ignored
+
+sqoop import \
+  -Dorg.apache.sqoop.splitter.allow_text_splitter=true \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table orders \
+  --warehouse-dir /user/levinkoshy/sqoop_import/retail_db \
+  --split-by order_status
+
+
+//auto reset to one mapper
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --warehouse-dir /user/levinkoshy/sqoop_import/retail_db \
+  --autoreset-to-one-mapper
+
+// different file format
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --warehouse-dir /user/levinkoshy/sqoop_import/retail_db \
+  --num-mappers 2 \
+  --as-sequencefile
+
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --warehouse-dir /user/levinkoshy/sqoop_import/retail_db \
+  --num-mappers 2 \
+  --as-textfile \
+  --compress
+
+
+// compression using snappy codec
+
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --warehouse-dir /user/levinkoshy/sqoop_import/retail_db \
+  --num-mappers 2 \
+  --as-textfile \
+  --compress \
+  --compression-codec org.apache.hadoop.io.compress.SnappyCodec
+
+
+
+//boundary query
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --warehouse-dir /user/levinkoshy/sqoop_import/retail_db \
+  --num-mappers 2 \
+  --as-textfile \
+  --compress \
+  --compression-codec org.apache.hadoop.io.compress.SnappyCodec \
+  --boundary-query 'select min(order_item_id),max(order_item_id) from order_items where order_item_id>99999'
+
+
+//boundary query-- hardcording
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --warehouse-dir /user/levinkoshy/sqoop_import/retail_db \
+  --num-mappers 2 \
+  --as-textfile \
+  --compress \
+  --compression-codec org.apache.hadoop.io.compress.SnappyCodec \
+  --boundary-query 'select 100000,172198'
+
+
+// selecting only some columns
+ sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --columns order_item_order_id,order_item_id,order_item_subtotal \
+  --warehouse-dir /user/levinkoshy/sqoop_import/retail_db \
+  --num-mappers 2
+
+
+
+select o.*, sum(oi.order_item_subtotal) order_revenue from orders o join order_items oi on o.order_id= oi.order_item_order_id group by o.order_id, o.order_date, o.order_customer_id, o.order_status;
+
+
+//using a query to filter/transform
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --target-dir /user/levinkoshy/sqoop_import/retail_db/orders_with_revenue \
+  --num-mappers 2 \
+  --query "select o.*, sum(oi.order_item_subtotal) order_revenue from orders o join order_items oi on o.order_id= oi.order_item_order_id and \$CONDITIONS group by o.order_id, o.order_date, o.order_customer_id, o.order_status" \
+  --split-by order_id
+
+
+sqoop import \
+ --connect jdbc:mysql://ms.itversity.com:3306/hr_db \
+ --username hr_user \
+ --password itversity \
+ --table employees \
+ --warehouse-dir /user/levinkoshy/sqoop_import/hr_db
+
+//dealing with non-string null fields, de-limiters
+sqoop import \
+ --connect jdbc:mysql://ms.itversity.com:3306/hr_db \
+ --username hr_user \
+ --password itversity \
+ --table employees \
+ --warehouse-dir /user/levinkoshy/sqoop_import/hr_db \
+ --null-non-string -1 \
+ --fields-terminated-by "\t" \
+ --lines-terminated-by ":"
+
+//ascii character
+sqoop import \
+ --connect jdbc:mysql://ms.itversity.com:3306/hr_db \
+ --username hr_user \
+ --password itversity \
+ --table employees \
+ --warehouse-dir /user/levinkoshy/sqoop_import/hr_db \
+ --null-non-string -1 \
+ --fields-terminated-by "\001" \
+ --lines-terminated-by ":"
+
+//Incremental import
+//initial
+ sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --target-dir /user/levinkoshy/sqoop_import/retail_db/orders \
+  --num-mappers 2 \
+  --query "select * from orders where \$CONDITIONS and order_date like '2013-%'" \
+  --split-by order_id
+
+
+sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --target-dir /user/levinkoshy/sqoop_import/retail_db/orders \
+  --num-mappers 2 \
+  --query "select * from orders where \$CONDITIONS and order_date like '2014-01%'" \
+  --split-by order_id \
+  --append
+
+
+ //To get rid of the --split-by, we can use where
+ sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --target-dir /user/levinkoshy/sqoop_import/retail_db/orders \
+  --table orders \
+  --where "order_date like '2014-02%'" \
+  --num-mappers 2 \
+  --append
+
+ sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --target-dir /user/levinkoshy/sqoop_import/retail_db/orders \
+  --table orders \
+  --check-column order_date \
+  --incremental append \
+  --last-value '2014-02-28' \
+  --num-mappers 2 \
+ 
+
+ //hive import 
+ sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --hive-import \
+  --hive-database levinkoshy_sqoop_import \
+  --hive-table order_items1 \
+  --num-mappers 2
+//If you run it again, data will get appended
+
+
+//overwrite the table
+  sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table order_items \
+  --hive-import \
+  --hive-database levinkoshy_sqoop_import \
+  --hive-table order_items \
+  --hive-overwrite \
+  --num-mappers 2
+ 
+
+//import all tables
+ sqoop import-all-tables \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --warehouse-dir /user/levinkoshy/sqoop_import/retail_db \
+  --autoreset-to-one-mapper
+ 
+
+ //hive import 
+ sqoop import \
+  --connect jdbc:mysql://ms.itversity.com:3306/retail_db \
+  --username retail_user \
+  --password itversity \
+  --table orders \
+  --hive-import \
+  --hive-database levinkoshy_sqoop_import \
+  --hive-table orders \
+  --num-mappers 2
+
+//Export
+
+//table creation in hive
+ create table daily_revenue as
+ select order_date, sum(order_item_subtotal) daily_revenue
+ from orders join order_items on
+ order_id = order_item_order_id
+ where order_date like '2013-07%'
+ group by order_date;
+
+
+ //table creation in mySQL
+
+create table daily_revenue(
+order_date varchar(30),
+revenue float);
+
+//Getting the location of the hive table
+// hdfs://nn01.itversity.com:8020/apps/hive/warehouse/levinkoshy_sqoop_import.db/daily_revenue
+
+sqoop export \
+   --connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+   --username retail_user \
+   --password itversity \
+   --export-dir /apps/hive/warehouse/levinkoshy_sqoop_import.db/daily_revenue \
+   --table daily_revenue \
+   --input-fields-terminated-by "\001" 
+   --num-mappers 1
+
+
+//If the order of the columns in the target table is different,
+//we need to specify the column names 
+//structure should match the source table, names should match the target table
+
+create table daily_revenue_demo (
+     revenue float,
+     order_date varchar(30),
+     description varchar(200));
+
+sqoop export \
+   --connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+   --username retail_user \
+   --password itversity \
+   --export-dir /apps/hive/warehouse/levinkoshy_sqoop_import.db/daily_revenue \
+   --table daily_revenue_demo \
+   --columns order_date,revenue \
+   --input-fields-terminated-by "\001" \
+   --num-mappers 1
+
+
+ insert into table daily_revenue
+     select order_date, sum(order_item_subtotal) daily_revenue
+     from orders join order_items on
+     order_id = order_item_order_id
+     where order_date like '2013-08%'
+     group by order_date;
+
+//update-by-key
+sqoop export \
+   --connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+   --username retail_user \
+   --password itversity \
+   --export-dir /apps/hive/warehouse/levinkoshy_sqoop_import.db/daily_revenue \
+   --table daily_revenue \
+   --update-key order_date \
+   --input-fields-terminated-by "\001" \
+   --num-mappers 1
+
+
+ sqoop export \
+   --connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+   --username retail_user \
+   --password itversity \
+   --export-dir /apps/hive/warehouse/levinkoshy_sqoop_import.db/daily_revenue \
+   --table daily_revenue \
+   --update-key order_date \
+   --update-mode allowinsert \
+   --input-fields-terminated-by "\001" \
+   --num-mappers 1
+
+ insert into table daily_revenue
+     select order_date, sum(order_item_subtotal) daily_revenue
+     from orders join order_items on
+     order_id = order_item_order_id
+     group by order_date;
+
+
+//stage
+create table daily_revenue_stage(
+order_date varchar(30) primary key,
+revenue float);
+
+sqoop export \
+   --connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+   --username retail_user \
+   --password itversity \
+   --export-dir /apps/hive/warehouse/levinkoshy_sqoop_import.db/daily_revenue \
+   --table daily_revenue \
+   --staging-table daily_revenue_stage \
+   --input-fields-terminated-by "\001"
+
+
+sqoop export \
+   --connect jdbc:mysql://ms.itversity.com:3306/retail_export \
+   --username retail_user \
+   --password itversity \
+   --export-dir /apps/hive/warehouse/levinkoshy_sqoop_import.db/daily_revenue \
+   --table daily_revenue \
+   --staging-table daily_revenue_stage \
+   --clear-staging-table \
+   --input-fields-terminated-by "\001"
